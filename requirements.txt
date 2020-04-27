@@ -1,0 +1,4 @@
+numpy==1.11.1
+Adafruit_BBIO==1.1.1
+PyQt5==5.14.2
+visa==2.21.0
