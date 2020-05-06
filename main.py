@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtPrintSupport import *
+from PyQt5 import *
 
 import motor_control
 import scope_communication
@@ -44,9 +45,47 @@ if __name__ == '__main__':
     
     # Setup GUI
     app = QApplication(sys.argv)
+    
+    main_window = QMainWindow()
+    main_window.setFixedSize(800,600)
+    main_window.setWindowTitle('NuMI horn field-mapping system')
+    
     window = QWidget()
-    window.setWindowTitle('GUI Test')
-    grid = QGridLayout(window)
+    window_layout = QGridLayout()
+    window.setLayout(window_layout)
+    
+    control_window = QWidget()
+    control_layout = QHBoxLayout()
+    control_window.setLayout(control_layout)
+    
+    control_buttons = QWidget()
+    control_grid = QGridLayout()
+    control_buttons.setLayout(control_grid)
+    control_layout.addWidget(control_buttons)
+    
+    readout = QWidget()
+    readout_grid = QGridLayout()
+    readout.setLayout(readout_grid)
+    control_layout.addWidget(readout)
+    
+    cal_window = QWidget()
+    DAQ_window = QWidget()
+    scan_window = QWidget()
+    
+    # Main menubar
+    menubar = main_window.menuBar()
+    file_menu = menubar.addMenu('File')
+    
+    exit_act = QAction('Exit', window)        
+    exit_act.triggered.connect(qApp.quit)
+    file_menu.addAction(exit_act)
+    
+    # Initialize tabs
+    tabs = QTabWidget()
+    tabs.addTab(control_window,"Control")
+    tabs.addTab(cal_window,"Calibration")
+    tabs.addTab(DAQ_window,"DAQ")
+    tabs.addTab(scan_window,"Scan")
     
     # Log output window
     log_window = QTextEdit(window)
@@ -55,29 +94,33 @@ if __name__ == '__main__':
     font = log_window.font()
     font.setFamily("Courier")
     font.setPointSize(10)
-    grid.addWidget(log_window,7,0,1,3)
-    log_message(logfile, log_window, 'Initalized.')
     
     # Setup buttons
     u_button = QPushButton('Up')
-    grid.addWidget(u_button,0,0,1,3)
+    control_grid.addWidget(u_button,0,0,1,3)
     u_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'up'))
     d_button = QPushButton('Down')
-    grid.addWidget(d_button,1,0,1,3)
+    control_grid.addWidget(d_button,1,0,1,3)
     d_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'down'))
     l_button = QPushButton('Left')
-    grid.addWidget(l_button,2,0,2,1)
+    control_grid.addWidget(l_button,2,0,2,1)
     l_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'left'))
     r_button = QPushButton('Right')
-    grid.addWidget(r_button,2,2,2,1)
+    control_grid.addWidget(r_button,2,2,2,1)
     r_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'right'))
     f_button = QPushButton('Forward')
-    grid.addWidget(f_button,2,1)
+    control_grid.addWidget(f_button,2,1)
     f_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'forward'))
     b_button = QPushButton('Back')
-    grid.addWidget(b_button,3,1)
+    control_grid.addWidget(b_button,3,1)
     b_button.clicked.connect(lambda: dir_button_pressed(logfile, log_window, 'back'))
     
-    window.setLayout(grid)
-    window.show()
+    window_layout.setRowStretch(0, 3)
+    window_layout.addWidget(tabs,0,0)
+    window_layout.setRowStretch(1, 1)
+    window_layout.addWidget(log_window,1,0)
+    
+    main_window.setCentralWidget(window)
+    main_window.show()
+    log_message(logfile, log_window, 'Program initalized.')
     sys.exit(app.exec_())
