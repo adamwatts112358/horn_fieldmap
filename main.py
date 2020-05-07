@@ -39,6 +39,16 @@ def dir_button_pressed(logfile, log_window, d):
         log_message(logfile, log_window, 'Moving forward (+Z)')
     elif d is 'back':
         log_message(logfile, log_window, 'Moving back (-Z)')
+        
+def config_save(config_file_path, config_editor, logfile, log_window):
+    text = config_editor.toPlainText()
+    try:
+        with open(config_file_path, 'w') as f:
+            f.write(text)
+        log_message(logfile, log_window, 'Config. file saved to {}'.format(config_file_path))
+        # Re-parse and load config file
+    except Exception as e:
+        log_message(logfile, log_window, 'Error in saving file: {}'.format(e))
 
 if __name__ == '__main__':
     # Setup logging
@@ -49,7 +59,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     
     main_window = QMainWindow()
-    main_window.setFixedSize(800,600)
+    main_window.setFixedSize(600,600)
     main_window.setWindowTitle('NuMI horn field-mapping system')
     
     window = QWidget()
@@ -65,6 +75,7 @@ if __name__ == '__main__':
     control_buttons.setLayout(control_grid)
     control_layout.addWidget(control_buttons)
     
+    #------- Setup status window ---------------
     readout = QTextEdit()
     # Temporary variable for designing layout
     oscope_status = "OK"
@@ -105,7 +116,7 @@ if __name__ == '__main__':
     </table>
     <p>&nbsp;</p>
     <font size=4>
-    <table cellpadding=10>
+    <table cellpadding=5>
         <tr><td colspan=2 style="text-align: center;"><h2>Live Position Readings</h2></td></tr>
         <tr>
             <td style="text-align: center;">X-axis</td>
@@ -126,12 +137,43 @@ if __name__ == '__main__':
     '''.format(oscope_status_color, oscope_status, probe_status_color, probe_status, motor_status_color, motor_status, x_pos, y_pos, z_pos)
     readout.setText(readout_text)
     
-    
     control_layout.addWidget(readout)
     
+    #-----------------------------------
+    
+    # These each need to be fleshed out
     cal_window = QWidget()
     DAQ_window = QWidget()
     scan_window = QWidget()
+    
+    #------------Setup Config Editor Window-------------
+    config_window = QWidget()
+    config_window_layout = QGridLayout()
+    config_window.setLayout(config_window_layout)
+    
+    config_editor = QPlainTextEdit()
+    font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+    config_editor.setFont(font)
+    font.setPointSize(10)
+    config_file_path = 'config.ini'
+    
+    save_config_button = QPushButton('Save Config')
+    save_config_button.clicked.connect(lambda: config_save(config_file_path, config_editor, logfile, log_window)) # save file
+    
+    config_window_layout.setRowStretch(0,9)
+    config_window_layout.setRowStretch(1,1)
+    #config_window_layout.setColumnStretch(0,1)
+    #config_window_layout.setColumnStretch(1,19)
+    
+    config_window_layout.addWidget(config_editor,0,0)
+    config_window_layout.addWidget(save_config_button,1,0)
+    
+    with open(config_file_path, 'r') as f:
+        config_text = f.read()
+    
+    config_editor.setPlainText(config_text)
+    
+    #-----------------------------------
     
     # Main menubar
     menubar = main_window.menuBar()
@@ -143,10 +185,11 @@ if __name__ == '__main__':
     
     # Initialize tabs
     tabs = QTabWidget()
-    tabs.addTab(control_window,"Control")
-    tabs.addTab(cal_window,"Calibration")
-    tabs.addTab(DAQ_window,"DAQ")
-    tabs.addTab(scan_window,"Scan")
+    tabs.addTab(control_window, "Control")
+    tabs.addTab(config_window, "Config")
+    tabs.addTab(cal_window, "Calibration")
+    tabs.addTab(DAQ_window, "DAQ")
+    tabs.addTab(scan_window, "Scan")
     
     # Log output window
     log_window = QTextEdit(window)
