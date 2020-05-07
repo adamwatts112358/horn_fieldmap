@@ -9,6 +9,8 @@ from PyQt5 import *
 import motor_control
 import scope_communication
 
+# Make window setups their own functions?
+# May need a "refresh status" function that re-checks subsystems to update status display (periodically?)
 # Add: display positions on GUI
 # Add: bring together all modules
 # Add scan inputs to GUI
@@ -63,9 +65,68 @@ if __name__ == '__main__':
     control_buttons.setLayout(control_grid)
     control_layout.addWidget(control_buttons)
     
-    readout = QWidget()
-    readout_grid = QGridLayout()
-    readout.setLayout(readout_grid)
+    readout = QTextEdit()
+    # Temporary variable for designing layout
+    oscope_status = "OK"
+    probe_status = "OK"
+    motor_status = "Failed"
+    
+    green = '#78BE20'
+    red = '#AF272F'
+    
+    if oscope_status is "OK":
+        oscope_status_color = green
+    else:
+        oscope_status_color = red
+        
+    if probe_status is "OK":
+        probe_status_color = green
+    else:
+        probe_status_color = red
+        
+    if motor_status is "OK":
+        motor_status_color = green
+    else:
+        motor_status_color = red
+    
+    x_pos = 0.0
+    y_pos = 0.0
+    z_pos = 10.0
+    readout_text = '''
+    <body style="background-color:#f2f2f2;">
+    <center>
+    <table cellpadding=10>
+        <tr><td style="text-align: center;"><h2>Subsystem Status Checks</h2></td></tr>
+    </table>
+    <table border cellpadding=10>
+        <tr><td style="text-align: center; background-color:{}">Oscilloscopes: <b>{}</b></td></tr>
+        <tr><td style="text-align: center; background-color:{}">Magnetic field probe: <b>{}</b></td></tr>
+        <tr><td style="text-align: center; background-color:{}">Stepper motor controllers: <b>{}</b></td></tr>
+    </table>
+    <p>&nbsp;</p>
+    <font size=4>
+    <table cellpadding=10>
+        <tr><td colspan=2 style="text-align: center;"><h2>Live Position Readings</h2></td></tr>
+        <tr>
+            <td style="text-align: center;">X-axis</td>
+            <td style="text-align: center;">{}</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">Y-axis</td>
+            <td style="text-align: center;">{}</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">Z-axis</td>
+            <td style="text-align: center;">{}</td>
+        </tr>
+    </table>
+    </font>
+    </center>
+    </body>
+    '''.format(oscope_status_color, oscope_status, probe_status_color, probe_status, motor_status_color, motor_status, x_pos, y_pos, z_pos)
+    readout.setText(readout_text)
+    
+    
     control_layout.addWidget(readout)
     
     cal_window = QWidget()
