@@ -1,5 +1,7 @@
 import Adafruit_BBIO.GPIO as GPIO
 
+# Add a repeater loop so could make 10 moves with single function call, etc.
+
 # X-axis
 def move_left(X_dir_pin, X_step_pin):
     # Implement step multiplier

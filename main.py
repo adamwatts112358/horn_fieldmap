@@ -6,8 +6,13 @@ from PyQt5.QtCore import *
 from PyQt5.QtPrintSupport import *
 from PyQt5 import *
 
+import pyvisa as visa
+import numpy as np
+import struct
+import sys
+
 import motor_control
-import scope_communication
+import config_parse
 
 # Make window setups their own functions?
 # May need a "refresh status" function that re-checks subsystems to update status display (periodically?)
@@ -17,6 +22,40 @@ import scope_communication
 # Make scan GUI load defaults from config file
 # Make input from GUI change params
 # Add: saving numpy files for data https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
+# BBB qemu emulation: https://github.com/hufscse-linux/bbbqemu
+
+def initialize_scope(scope_type, IP_address):
+    ''' Initalize and connect to oscilliscope. Supported scope types are Tektronix and Agilent,
+    requiring slightly different commands for each.'''
+    
+    global logfile
+    global log_window
+    
+    rm = visa.ResourceManager('@py')
+    log_message(logfile, log_window, "Connecting to {} scope @ {}".format(scope_type, IP_address))
+    
+    try:
+        if scope_type is 'Agilent':
+            # Initialize connection to scope
+            scope = rm.open_resource('TCPIP0::%s::inst0::INSTR'%(IP_address))
+            print(scope.query('*IDN?'))
+            # Set up scope
+            scope.write(":WAVEFORM:FORMAT BYTE")
+            scope.write(":WAVeform:POINts:MODE NORMAL")
+            scope.write(":WAVeform:POINts 100")
+            scope.write(":TRIGger:MODE EDGE")
+            scope.write(":TRIGger:SOURce EXTernal")
+            scope.write(":TRIGger:LEVel 0.5")
+            log_message(logfile, log_window, "Successful configuration of {} scope ({})".format(scope_type, IP_address))
+            return scope
+        elif scope_type is 'Tektronix':
+            scope = rm.open_resource('TCPIP0::%s::inst0::INSTR'%(IP_address))
+            print(scope.query('*IDN?'))
+            log_message(logfile, log_window, "Successful configuration of {} scope ({})".format(scope_type, IP_address))
+            return scope
+    except Exception as e:
+        log_message(logfile, log_window, e)
+        return None
 
 def log_message(logfile, log_window, message):
     ''' Log message and timestamp to both GUI log window and log file. '''
@@ -75,10 +114,39 @@ if __name__ == '__main__':
     control_buttons.setLayout(control_grid)
     control_layout.addWidget(control_buttons)
     
+    # Log output window
+    log_window = QTextEdit(window)
+    log_window.setReadOnly(True)
+    log_window.setLineWrapMode(QTextEdit.NoWrap)
+    font = log_window.font()
+    font.setFamily("Courier")
+    font.setPointSize(10)
+    log_message(logfile, log_window, 'Program initalized.')
+    
+    # Read in configuration file
+    try:
+        scope_A_params, scope_B_params = config_parse.get_scope_params()
+        BB = config_parse.get_BB_params()
+    except Exception as e:
+        log_message(logfile, log_window, 'Error in loading configuration file: {}'.format(e))
+        
     #------- Setup status window ---------------
     readout = QTextEdit()
     # Temporary variable for designing layout
-    oscope_status = "OK"
+    
+    # Try connecting to both scopes. If successful, change status accordingly
+    # Read scope parameters from the config file
+    
+    scope_A_device = initialize_scope(scope_A_params['Type'], scope_A_params['IP'])
+    scope_B_device = initialize_scope(scope_B_params['Type'], scope_B_params['IP'])
+    if scope_A_device and scope_B_device:
+        log_message(logfile, log_window, 'Scope connections successful')
+        oscope_status = "OK"
+    else:
+        log_message(logfile, log_window, 'Error in connecting to scopes')
+        oscope_status = "Failed"
+    
+    #oscope_status = "OK"
     probe_status = "OK"
     motor_status = "Failed"
     
@@ -89,16 +157,6 @@ if __name__ == '__main__':
         oscope_status_color = green
     else:
         oscope_status_color = red
-        
-    if probe_status is "OK":
-        probe_status_color = green
-    else:
-        probe_status_color = red
-        
-    if motor_status is "OK":
-        motor_status_color = green
-    else:
-        motor_status_color = red
     
     x_pos = 0.0
     y_pos = 0.0
@@ -111,8 +169,6 @@ if __name__ == '__main__':
     </table>
     <table border cellpadding=10>
         <tr><td style="text-align: center; background-color:{}">Oscilloscopes: <b>{}</b></td></tr>
-        <tr><td style="text-align: center; background-color:{}">Magnetic field probe: <b>{}</b></td></tr>
-        <tr><td style="text-align: center; background-color:{}">Stepper motor controllers: <b>{}</b></td></tr>
     </table>
     <p>&nbsp;</p>
     <font size=4>
@@ -134,7 +190,7 @@ if __name__ == '__main__':
     </font>
     </center>
     </body>
-    '''.format(oscope_status_color, oscope_status, probe_status_color, probe_status, motor_status_color, motor_status, x_pos, y_pos, z_pos)
+    '''.format(oscope_status_color, oscope_status, x_pos, y_pos, z_pos)
     readout.setText(readout_text)
     
     control_layout.addWidget(readout)
@@ -162,8 +218,6 @@ if __name__ == '__main__':
     
     config_window_layout.setRowStretch(0,9)
     config_window_layout.setRowStretch(1,1)
-    #config_window_layout.setColumnStretch(0,1)
-    #config_window_layout.setColumnStretch(1,19)
     
     config_window_layout.addWidget(config_editor,0,0)
     config_window_layout.addWidget(save_config_button,1,0)
@@ -190,14 +244,6 @@ if __name__ == '__main__':
     tabs.addTab(cal_window, "Calibration")
     tabs.addTab(DAQ_window, "DAQ")
     tabs.addTab(scan_window, "Scan")
-    
-    # Log output window
-    log_window = QTextEdit(window)
-    log_window.setReadOnly(True)
-    log_window.setLineWrapMode(QTextEdit.NoWrap)
-    font = log_window.font()
-    font.setFamily("Courier")
-    font.setPointSize(10)
     
     # Setup buttons
     u_button = QPushButton('Up')
@@ -226,5 +272,4 @@ if __name__ == '__main__':
     
     main_window.setCentralWidget(window)
     main_window.show()
-    log_message(logfile, log_window, 'Program initalized.')
     sys.exit(app.exec_())

@@ -1,6 +1,7 @@
-import visa
+import pyvisa as visa
 import numpy as np
 import struct
+import sys
 
 # Change prints to logger outputs
 
@@ -10,9 +11,9 @@ def initialize(scope_type, IP_address):
 
     print("Connecting to {} scope @ {}".format(scope_type, IP_address))
     rm = visa.ResourceManager('@py')
-    
-    if scope_type is 'Agilent':
-        try:
+    try:
+        print(3/0)
+        if scope_type is 'Agilent':
             # Initialize connection to scope
             scope = rm.open_resource('TCPIP0::%s::inst0::INSTR'%(IP_address))
             print(scope.query('*IDN?'))
@@ -26,17 +27,12 @@ def initialize(scope_type, IP_address):
             scope.write(":TRIGger:LEVel 0.5")
             print("Configuration complete.")
             return scope
-        except:
-            print("Failed connection attempt to {}".format(IP_address))
-    elif scope_type is 'Tektronix':
-        try:
+        elif scope_type is 'Tektronix':
             scope = rm.open_resource('TCPIP0::%s::inst0::INSTR'%(IP_address))
             print(scope.query('*IDN?'))
             return scope
-        except:
-            print("Failed connection attempt to {}".format(IP_address))
-    else:
-        print("Scope type not recognized.")
+    except Exception as e:
+        print(e)
 
 def acquire(scope_type, scope, ch_num):
     '''Acquire data from a given scope's channel, returning a time and voltage array for that trigger.'''
