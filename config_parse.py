@@ -20,15 +20,15 @@ def get_BB_params():
     BB = {}
     BB['IP'] = config.get('BeagleBone', 'IP')
     # Get pin configurations
-    BB['trigger'] = config.get('BeagleBone', 'Trigger')
-    BB['A step'] = config.get('BeagleBone', 'MotorA_step')
-    BB['A dir'] = config.get('BeagleBone', 'MotorA_dir')
-    BB['B step'] = config.get('BeagleBone', 'MotorB_step')
-    BB['B dir'] = config.get('BeagleBone', 'MotorB_dir')
-    BB['C step'] = config.get('BeagleBone', 'MotorC_step')
-    BB['C dir'] = config.get('BeagleBone', 'MotorC_dir')
-    BB['X-axis'] = config.get('BeagleBone', 'X-axis')
-    BB['Y-axis'] = config.get('BeagleBone', 'Y-axis')
-    BB['Z-axis'] = config.get('BeagleBone', 'Z-axis')
+    BB['Trigger'] = config.get('BeagleBone', 'Trigger')
+    BB['MotorX_step'] = config.get('BeagleBone', 'MotorX_step')
+    BB['MotorX_dir'] = config.get('BeagleBone', 'MotorX_dir')
+    BB['MotorY_step'] = config.get('BeagleBone', 'MotorY_step')
+    BB['MotorY_dir'] = config.get('BeagleBone', 'MotorY_dir')
+    BB['MotorZ_step'] = config.get('BeagleBone', 'MotorZ_step')
+    BB['MotorZ_dir'] = config.get('BeagleBone', 'MotorZ_dir')
+    BB['X-pos'] = config.get('BeagleBone', 'X-pos')
+    BB['Y-pos'] = config.get('BeagleBone', 'Y-pos')
+    BB['Z-pos'] = config.get('BeagleBone', 'Z-pos')
     
     return BB
